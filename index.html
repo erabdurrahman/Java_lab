@@ -8,27 +8,206 @@
 </head>
 <body>
   <div class="container">
-    <h1>Todo List</h1>
+    <header class="app-header">
+      <div class="title-row">
+        <h1>Todo List</h1>
 
-    <form id="todo-form">
-      <label for="todo-input" class="sr-only">New task</label>
-      <input
-        type="text"
-        id="todo-input"
-        placeholder="Add a new task..."
-        autocomplete="off"
-        required
-      />
-      <button type="submit">Add</button>
-    </form>
+        <div class="header-actions">
+          <button id="theme-toggle" class="btn btn-ghost" type="button" aria-label="Toggle theme">
+            Theme
+          </button>
+
+          <button id="export-btn" class="btn btn-ghost" type="button">
+            Export
+          </button>
+
+          <label class="btn btn-ghost file-btn" for="import-file">
+            Import
+          </label>
+          <input id="import-file" type="file" accept="application/json" class="sr-only" />
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="search-wrap">
+          <label for="search-input" class="sr-only">Search</label>
+          <input id="search-input" type="search" placeholder="Search tasks, tags..." autocomplete="off" />
+        </div>
+
+        <div class="segmented" role="tablist" aria-label="Filters">
+          <button class="seg-btn active" data-filter="all" type="button">All</button>
+          <button class="seg-btn" data-filter="active" type="button">Active</button>
+          <button class="seg-btn" data-filter="completed" type="button">Completed</button>
+        </div>
+
+        <div class="select-wrap">
+          <label for="sort-select" class="sr-only">Sort</label>
+          <select id="sort-select">
+            <option value="created_desc">Sort: Newest</option>
+            <option value="created_asc">Sort: Oldest</option>
+            <option value="due_asc">Sort: Due (Soon)</option>
+            <option value="due_desc">Sort: Due (Late)</option>
+            <option value="priority_desc">Sort: Priority (High)</option>
+            <option value="priority_asc">Sort: Priority (Low)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="summary" aria-live="polite">
+        <div class="summary-left">
+          <strong id="summary-progress">0%</strong>
+          <span id="summary-counts">0 total ��� 0 done</span>
+        </div>
+        <div class="summary-right">
+          <span id="items-left"></span>
+        </div>
+      </div>
+    </header>
+
+    <section class="composer">
+      <form id="todo-form">
+        <div class="composer-grid">
+          <div class="field field-main">
+            <label for="todo-input" class="sr-only">New task</label>
+            <input
+              type="text"
+              id="todo-input"
+              placeholder="Add a new task..."
+              autocomplete="off"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="priority-select" class="sr-only">Priority</label>
+            <select id="priority-select">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="due-input" class="sr-only">Due date</label>
+            <input id="due-input" type="datetime-local" />
+          </div>
+
+          <div class="field">
+            <label for="tags-input" class="sr-only">Tags</label>
+            <input id="tags-input" type="text" placeholder="Tags: work, home" />
+          </div>
+
+          <div class="field field-notes">
+            <label for="notes-input" class="sr-only">Notes</label>
+            <textarea id="notes-input" rows="2" placeholder="Notes (optional)"></textarea>
+          </div>
+
+          <div class="field field-row">
+            <label class="checkbox">
+              <input id="recurring-enabled" type="checkbox" />
+              <span>Recurring</span>
+            </label>
+
+            <label for="recurring-select" class="sr-only">Recurring type</label>
+            <select id="recurring-select" disabled>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Add</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="bulkbar" id="bulkbar" aria-live="polite">
+      <label class="checkbox">
+        <input id="select-all" type="checkbox" />
+        <span>Select all</span>
+      </label>
+
+      <div class="bulk-actions">
+        <button id="bulk-complete" class="btn btn-ghost" type="button">Mark done</button>
+        <button id="bulk-delete" class="btn btn-danger" type="button">Delete</button>
+        <button id="clear-completed" class="btn btn-ghost" type="button">Clear Completed</button>
+      </div>
+
+      <div class="bulk-meta">
+        <span id="selected-count">0 selected</span>
+      </div>
+    </section>
 
     <ul id="todo-list" aria-label="Todo tasks"></ul>
 
-    <div id="todo-footer" class="hidden">
-      <span id="items-left"></span>
-      <button id="clear-completed">Clear Completed</button>
-    </div>
+    <p class="hint">
+      Tips: Double���click task to edit. Use tags like <code>work, urgent</code>.
+    </p>
   </div>
+
+  <dialog id="task-dialog" class="dialog">
+    <form method="dialog" class="dialog-card" id="task-dialog-form">
+      <div class="dialog-head">
+        <h2>Edit task</h2>
+        <button class="btn btn-ghost" value="cancel" type="submit">Close</button>
+      </div>
+
+      <input type="hidden" id="dialog-id" />
+
+      <div class="dialog-grid">
+        <div class="field">
+          <label for="dialog-title">Title</label>
+          <input id="dialog-title" type="text" required />
+        </div>
+
+        <div class="field">
+          <label for="dialog-priority">Priority</label>
+          <select id="dialog-priority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="dialog-due">Due</label>
+          <input id="dialog-due" type="datetime-local" />
+        </div>
+
+        <div class="field">
+          <label for="dialog-tags">Tags</label>
+          <input id="dialog-tags" type="text" placeholder="comma separated" />
+        </div>
+
+        <div class="field">
+          <label for="dialog-notes">Notes</label>
+          <textarea id="dialog-notes" rows="3"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Subtasks (one per line)</label>
+          <textarea id="dialog-subtasks" rows="4" placeholder="- call client&#10;- send email"></textarea>
+        </div>
+
+        <div class="field field-row">
+          <label class="checkbox">
+            <input id="dialog-recurring-enabled" type="checkbox" />
+            <span>Recurring</span>
+          </label>
+
+          <select id="dialog-recurring-type" disabled>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+
+          <button class="btn btn-primary" id="dialog-save" value="save" type="submit">
+            Save
+          </button>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
   <script src="script.js"></script>
 </body>
